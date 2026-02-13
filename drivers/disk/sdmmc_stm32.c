@@ -675,13 +675,21 @@ static int stm32_sdmmc_access_erase(struct disk_info *disk, uint32_t sector, uin
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
+#ifdef CONFIG_SDMMC_STM32_EMMC
+	err = HAL_MMC_Erase(&priv->hsd, sector, sector + count);
+	if (err != HAL_OK) {
+		LOG_ERR("MMC erase block failed %d", err);
+		err = -EIO;
+		goto end;
+	}
+#else
 	err = HAL_SD_Erase(&priv->hsd, sector, sector + count);
 	if (err != HAL_OK) {
 		LOG_ERR("sd erase block failed %d", err);
 		err = -EIO;
 		goto end;
 	}
-
+#endif
 	while (!stm32_sdmmc_is_card_in_transfer(&priv->hsd)) {
 	}
 
